@@ -20,6 +20,14 @@ isAuth = (req, res, next) => {
     res.redirect('/login');
 }
 
+isAdmin = (req, res, next) => {
+    if (req.cookies && req.cookies.user) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+
 
 //gestion de la vista
 app.get('/login', (req, res) => {
