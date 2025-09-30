@@ -64,7 +64,10 @@ app.get('/home', isUser, (req, res) => {
 })
 
 app.get('/admin', isAdmin, (req, res) => {
-    res.render('admin');
+    res.render('admin', {
+        name: req.cookies.user,
+        rol: 'Admin'
+    })
 
 })
 

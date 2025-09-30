@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    zona privada
-    <br>
+<%- include('partials/header') %>
+    <h1>zona privada admin</h1>
+    <p>TU usuario es: <%=name %>
+    </p>
+    <p>Tu rol es: <%=rol %>
+    </p>
     <a href="/logout">Logout</a>
-    
-</body>
-</html>
+
+    <%- include('partials/footer') %>
