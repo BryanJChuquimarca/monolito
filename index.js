@@ -16,6 +16,7 @@ app.get('/', (req, res) => {
 isUser = (req, res, next) => {
     if (req.cookies && req.cookies.user == 'user') {
         return next();
+        
     }
     res.redirect('/login');
 }
