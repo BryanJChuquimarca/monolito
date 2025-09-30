@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 isUser = (req, res, next) => {
     if (req.cookies && req.cookies.user == 'user') {
         return next();
-        
+
     }
     res.redirect('/login');
 }
@@ -56,7 +56,10 @@ app.post('/login', (req, res) => {
 })
 
 app.get('/home', isUser, (req, res) => {
-    res.render('home');
+    res.render('home', {
+        name: req.cookies.user,
+        rol: 'Usuario'
+    })
 
 })
 
