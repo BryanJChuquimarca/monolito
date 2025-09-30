@@ -13,19 +13,19 @@ app.get('/', (req, res) => {
     res.render('index', { title: 'titulo', name: "nombre" });
 })
 
-isAuth = (req, res, next) => {
-    if (req.cookies && req.cookies.user) {
+isUser = (req, res, next) => {
+    if (req.cookies && req.cookies.user === 'user') {
         return next();
     }
     res.redirect('/login');
 }
 
 isAdmin = (req, res, next) => {
-    if (req.cookies && req.cookies.user) {
+    if (req.cookies && req.cookies.user === 'admin') {
         return next();
     }
     res.redirect('/login');
-    
+
 }
 
 
@@ -39,19 +39,28 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
     const { user, password } = req.body;
 
-    if (user == 'admin' && password == 'admin') {
+    if (user == 'user' && password == 'user') {
         console.log('Login correcto')
         res.cookie('user', user); //opcions -js no secure si
         res.redirect("home");
 
+    } else if (user == 'admin' && password == 'admin') {
+        console.log('Login correcto')
+        res.cookie('user', user); //opcions -js no secure si
+        res.redirect("admin");
     } else {
         res.status(401).redirect("login")
     }
 
 })
 
-app.get('/home', isAuth, (req, res) => {
+app.get('/home', isUser, (req, res) => {
     res.render('home');
+
+})
+
+app.get('/admin', isAdmin, (req, res) => {
+    res.render('admin');
 
 })
 
