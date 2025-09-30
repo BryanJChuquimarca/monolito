@@ -46,7 +46,7 @@ app.post('/login', (req, res) => {
 
     } else if (user == 'admin' && password == 'admin') {
         console.log('Login correcto')
-        res.cookie('user', user); //opcions -js no secure si
+        res.cookie('user', user);
         res.redirect("admin");
     } else {
         res.status(401).redirect("login")
