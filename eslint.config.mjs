@@ -5,30 +5,19 @@ import pluginPrettier from 'eslint-plugin-prettier';
 
 export default defineConfig([
   {
-    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
-    ...js.configs.recommended,
-
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'commonjs',
-      globals: {
-        ...globals.node,
-      },
-    },
-
-    rules: {
-      quotes: ['error', 'single'],
-    },
+    files: ['**/*.{js,mjs,cjs}'],
+    plugins: { js },
+    extends: ['js/recommended'],
+    languageOptions: { globals: globals.browser },
   },
   {
-    files: ['**/*.json'],
-    plugins: { json },
-    language: 'json/json',
-    extends: [
-      'json/recommended',
-      'eslint:recommended',
-      'plugin:prettier/recommended',
-    ],
+    files: ['**/*.js'],
+    languageOptions: { sourceType: 'commonjs' },
+    plugins: { prettier: pluginPrettier },
+    rules: {
+      semi: ['error', 'always'],
+      quotes: ['error', 'single'],
+      'prettier/prettier': 'error',
+    },
   },
-  
 ]);
