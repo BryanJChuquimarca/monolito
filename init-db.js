@@ -1,6 +1,6 @@
-const Database = require("better-sqlite3");
-const bcrypt = require("bcrypt");
-const db = new Database("database.sqlite", { verbose: console.log });
+const Database = require('better-sqlite3');
+const bcrypt = require('bcrypt');
+const db = new Database('database.sqlite', { verbose: console.log });
 
 //crear tabla users
 const sentencia = db.prepare(`CREATE TABLE IF NOT EXISTS users (
@@ -14,11 +14,11 @@ sentencia.run();
 
 //insertar usuarios
 const insertar = db.prepare(
-  `INSERT or IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`
+  `INSERT or IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`,
 );
 
-const hashedPwd = bcrypt.hashSync("1234", 10);
-insertar.run("user", hashedPwd, "user");
+const hashedPwd = bcrypt.hashSync('1234', 10);
+insertar.run('user', hashedPwd, 'user');
 
-const hashedPwd2 = bcrypt.hashSync("12345", 10);
-insertar.run("admin", hashedPwd2, "admin");
+const hashedPwd2 = bcrypt.hashSync('12345', 10);
+insertar.run('admin', hashedPwd2, 'admin');
