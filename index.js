@@ -14,7 +14,7 @@ app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.render("index", { title: "titulo", name: "nombre" })
-});
+})
 
 isUser = (req, res, next) => {
   if (req.cookies && req.cookies.user == 'user') {
