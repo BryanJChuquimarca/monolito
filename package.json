@@ -1,7 +1,7 @@
 {
   "name": "monolito",
   "version": "1.0.0",
-  "description": "",
+  "description": "_Aplicación con un sistema de autenticación básico desarrollado con Node.js y Express, utilizando EJS como motor de plantillas y SQLite como base de datos._\r _Incluye gestión de sesiones mediante cookies, validación de usuarios y un sistema de roles (usuario / administrador) con zonas privadas protegidas según el rol._",
   "license": "MIT",
   "author": "Bryan",
   "type": "commonjs",
@@ -9,7 +9,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
