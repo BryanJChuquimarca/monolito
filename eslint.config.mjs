@@ -17,6 +17,4 @@ export default defineConfig([
       globals: { ...globals.es2023, ...globals.common },
     },
   },
-
-  js.configs.recommended,
 ]);

@@ -7,13 +7,14 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
     "test": "npm run lint:fix && npm run format",
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "prepare": "husky",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
-    "format": "prettier --write ."
+    "prepare": "husky"
+    
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
