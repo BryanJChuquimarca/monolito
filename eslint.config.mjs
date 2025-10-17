@@ -10,13 +10,13 @@ export default defineConfig({
     parserOptions: { ecmaVersion: 'latest' },
   },
   plugins: {
-    prettier: prettierPlugin, // se pasa como objeto
+    prettier: prettierPlugin,
   },
-  extends: ['eslint:recommended', 'plugin:prettier/recommended'], // ahora usa el shareable config de Prettier
+  extends: ['eslint:recommended'], // solo config de ESLint
   rules: {
     'no-unused-vars': 'warn',
     'no-undef': 'error',
     'no-console': 'off',
-    'prettier/prettier': 'error',
+    'prettier/prettier': 'error', // activa reglas de Prettier
   },
 });
