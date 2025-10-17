@@ -1,7 +1,7 @@
 {
   "name": "monolito",
   "version": "1.0.0",
-  "description": "",
+  "description": "_Aplicación con un sistema de autenticación básico desarrollado con Node.js y Express, utilizando EJS como motor de plantillas y SQLite como base de datos._\r _Incluye gestión de sesiones mediante cookies, validación de usuarios y un sistema de roles (usuario / administrador) con zonas privadas protegidas según el rol._",
   "license": "MIT",
   "author": "Bryan",
   "type": "commonjs",
@@ -9,14 +9,25 @@
   "scripts": {
     "test": "npm rin lint:fix && npm run format",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.4.1",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2"
   }
 }

@@ -1,24 +1,48 @@
-const Database = require("better-sqlite3");
-const bcrypt = require("bcrypt");
-const db = new Database("database.sqlite", { verbose: console.log });
+const { Client } = require('pg');
+const bcrypt = require('bcrypt');
 
-//crear tabla users
-const sentencia = db.prepare(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT unique,
-    password TEXT,
-    role TEXT
-)`);
+require('dotenv').config();
 
-sentencia.run();
+const client = new Client({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+});
 
-//insertar usuarios
-const insertar = db.prepare(
-  `INSERT or IGNORE INTO users (username, password, role) VALUES (?, ?, ?)`
-);
+async function initDB() {
+  try {
+    await client.connect();
+    console.log('Connected to the database');
 
-const hashedPwd = bcrypt.hashSync("1234", 10);
-insertar.run("user", hashedPwd, "user");
+    await client.query(`
+  CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL
+  );
+`);
 
-const hashedPwd2 = bcrypt.hashSync("12345", 10);
-insertar.run("admin", hashedPwd2, "admin");
+    await client.query(
+      `INSERT INTO users (username, password, role) VALUES
+      ($1, $2, $3)
+      ON CONFLICT (username) DO NOTHING`,
+      ['admin', await bcrypt.hash('12345', 10), 'admin'],
+    );
+
+    await client.query(
+      `INSERT INTO users (username, password, role) VALUES
+      ($1, $2, $3)
+      ON CONFLICT (username) DO NOTHING`,
+      ['user', await bcrypt.hash('1234', 10), 'user'],
+    );
+    await client.end();
+    console.log('Database initialized with default users');
+  } catch (error) {
+    console.error('Error initializing the database:', error);
+  }
+}
+
+initDB();
