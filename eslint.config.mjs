@@ -1,42 +1,34 @@
-import { defineConfig } from 'eslint/config';
-import globals from 'globals';
-import prettierPlugin from 'eslint-plugin-prettier';
 import js from '@eslint/js';
-
+import globals from 'globals';
+import { defineConfig } from 'eslint/config';
+import pluginPrettier from 'eslint-plugin-prettier';
 export default defineConfig([
-  js.configs.recommended,
-
-  {
-    plugins: {
-      prettier: prettierPlugin,
+    {
+        files: ['**/*.{js,mjs,cjs}'],
+        plugins: {
+            js,
+        },
+        extends: ['js/recommended'],
+        languageOptions: {
+            globals: globals.browser,
+        },
     },
-    rules: {
-      'prettier/prettier': 'error',
-      'arrow-body-style': 'off',
-      'prefer-arrow-callback': 'off',
+    {
+        files: ['**/*.js'],
+        languageOptions: {
+            sourceType: 'commonjs',
+            globals: {
+                ...globals.node,
+                ...globals.es2021,
+            },
+        },
+        plugins: {
+            prettier: pluginPrettier,
+        },
+        rules: {
+            semi: ['error', 'always'],
+            quotes: ['error', 'single'],
+            'prettier/prettier': 'error',
+        },
     },
-  },
-
-  {
-    files: ['**/*.{js,mjs,cjs}'],
-
-    languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.browser,
-        isUser: 'writable',
-        isAdmin: 'writable',
-      },
-      sourceType: 'module',
-      parserOptions: { ecmaVersion: 'latest' },
-    },
-
-    rules: {
-
-      'no-unused-vars': 'warn',
-      'no-undef': 'error',
-      'no-console': 'off',
-    },
-  },
 ]);
-

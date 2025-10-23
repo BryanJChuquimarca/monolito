@@ -4,16 +4,15 @@
   "description": "_Aplicación con un sistema de autenticación básico desarrollado con Node.js y Express, utilizando EJS como motor de plantillas y SQLite como base de datos._\r _Incluye gestión de sesiones mediante cookies, validación de usuarios y un sistema de roles (usuario / administrador) con zonas privadas protegidas según el rol._",
   "license": "MIT",
   "author": "Bryan",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
-    "format": "prettier --write .",
     "test": "npm run lint:fix && npm run format",
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint:fix": "eslint . --ext .js --fix",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -32,6 +31,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.4.0",
     "husky": "^9.1.7",
+    "lint-staged": "^16.2.5",
     "prettier": "^3.6.2"
   }
 }

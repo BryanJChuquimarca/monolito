@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
   res.render('index', { title: 'titulo', name: 'nombre' });
 });
 
-isUser = (req, res, next) => {
+const isUser = (req, res, next) => {
   if (req.cookies && req.cookies.user == 'user') {
     return next();
   }
@@ -36,7 +36,7 @@ isUser = (req, res, next) => {
   res.redirect('/login');
 };
 
-isAdmin = (req, res, next) => {
+const isAdmin = (req, res, next) => {
   if (req.cookies && req.cookies.user === 'admin') {
     return next();
   }
