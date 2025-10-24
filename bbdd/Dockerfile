@@ -25,5 +25,6 @@ RUN npm install
 
 # CMD iniciar postgress && node init-db.js 
 CMD su-exec postgres pg_ctl -D /var/lib/postgresql/data start && \
+    until pg_isready -U postgres; do echo "Waiting for database..."; sleep 1; done && \
     node init-db.js && \
     tail -f /dev/null
