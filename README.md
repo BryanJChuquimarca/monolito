@@ -1,47 +1,84 @@
 # Aplicacion sencilla con autentificación sencilla con roles de usuario
 
-_Aplicación con un sistema de autenticación básico desarrollado con Node.js y Express, utilizando EJS como motor de plantillas y SQLite como base de datos._
-_Incluye gestión de sesiones mediante cookies, validación de usuarios y un sistema de roles (usuario / administrador) con zonas privadas protegidas según el rol._
+_Aplicación con un sistema de autenticación básico desarrollado con Node.js y Express y PostgreSQL._
+_Son 4 contenedores dos de App y dos de BBDD las cuales utilizan el mismo volumen._
 
-## Explicación del uso de cada parte
-
-_Explicación del uso de cada parte (plantillas, base de datos, autenticación, cookies, roles y zonas privadas)._
-
-### Plantillas (EJS)
+### Organización
 
 _Las vistas se generan usando EJS, lo que permite incluir fragmentos comunes (header y footer) y mostrar información dinámica del usuario._
-_Estructura:_
+_Estructura de app:_
 
 ```
-views/
- ├── partials/
- │   ├── footer.ejs
- │   └── header.ejs
- ├── admin.ejs
- ├── index.ejs
- ├── login.ejs
- └── user.ejs
+app/
+├── views/
+│     ├── partials/
+│     │   ├── footer.ejs
+│     │   └── header.ejs
+│     ├── admin.ejs
+│     ├── index.ejs
+│     ├── login.ejs
+│     └── user.ejs
+├──index.js
+└──Dockerfile
 ```
 
-### Base de datos (SQLite)
-
-Se usa genera un archivo database.sqlite con una tabla usuarios que contiene:
-
-- id
-- username
-- password (encriptada)
-- role (user / admin)
-
-El archivo init-db.js crea la base de datos y la tabla si no existe.
+_Estructura de bbdd:_
 
 ```
-const sentencia = db.prepare(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT unique,
-    password TEXT,
-    role TEXT
-)`);
+bbdd/
+├──Dockerfile
+└──init-db.js
 ```
+
+_El proyecto se divide en dos imagenes una de app y otra de bbdd, la de app contiene la aplicacion de node.js, la autentificacion y los roles y registro.Bbdd contiene la instalacion del servidor de postgres y la instalacion de la base de datos._
+
+### Pasos para la ejecución con Docker
+
+_Se configura la red y el volumen:_
+
+```
+docker network create mi_red
+docker volume create datos_postgres
+```
+
+_Se contrulle las imagenes:_
+
+```
+docker build -t monolito-postgres ./bbdd
+docker build -t monolito-node ./app
+```
+
+_Se ejecuta los contenedores:_
+bbdd(primer contenedor):
+
+```
+docker run -d --name monolito_postgres_1 --network mi_red -v datos_postgres:/var/lib/postgresql/data monolito-postgres
+```
+
+bbdd(segundo contenedor):
+
+```
+docker run -d --name monolito_postgres_2 --network mi_red -v datos_postgres:/var/lib/postgresql/data monolito-postgres
+```
+
+App(primer contenedor):
+
+```
+docker run -d --name monolito_app_1 --network mi_red --env DB_HOST=monolito_postgres_1 -p 3000:3000 monolito-node
+```
+
+App(segundo contenedor):
+
+```
+docker run -d --name monolito_app_2 --network mi_red --env DB_HOST=monolito_postgres_2 -p 3001:3000 monolito-node
+```
+
+_Acceso:_
+
+App 1:
+[http://localhost:3000](http://localhost:3000)
+App 2:
+[http://localhost:3001](http://localhost:3001)
 
 ### Autenticación
 
@@ -50,22 +87,30 @@ Las credenciales se verifican con la base de datos.
 Si son correctas, se crea una sesión con los datos del usuario._
 
 ```
-app.post("/login", (req, res) => {
+app.post('/login', async (req, res) => {
   const { user, password } = req.body;
-  const seleccionar = db.prepare(`select * from users where username = ?`);
-  const fila = seleccionar.get(user);
+  const seleccionar = await pool.query(
+    'SELECT username, password, role FROM users WHERE username = $1',
+    [user],
+  );
+  const fila = seleccionar.rows[0];
 
   if (fila) {
     const username = fila.username;
     const pwd = fila.password;
 
-    if (bcrypt.compareSync(password, pwd)) {
-      console.log("Login correcto de " + username);
-      res.cookie("user", user);
-      res.redirect(fila.role);
-    } else {
-      res.status(401).redirect("login");
-    }
+    if (await bcrypt.compareSync(password, pwd)) {
+  console.log('Login correcto de ' + username);
+  res.cookie('user', JSON.stringify({ username: fila.username, role: fila.role }));
+  if (fila.role === 'admin') {
+    res.redirect('/admin');
+  } else {
+    res.redirect('/user');
+  }
+} else {
+  res.status(401).redirect('/login');
+}
+
   }
 });
 ```
@@ -76,58 +121,46 @@ _Las sesiones se gestionan mediante cookies utilizando express-session._
 _Permiten mantener el estado del usuario entre peticiones._
 
 ```
-res.cookie("user", user);
+res.cookie('user', JSON.stringify({ username: fila.username, role: fila.role }));
 ```
 
 ### Roles
 
-_Cada usuario tiene un rol asignado:_
+_Cada usuario tiene un rol asignado y se verica en cada solicitud a una ruta:_
 
-- user → acceso a /user
 - admin → acceso a /admin
+- user(rol por defecto para nuevos usuarios) → acceso a /user
 
 _El rol se comprueba antes de permitir el acceso a cada zona._
 
 ```
-isUser = (req, res, next) => {
-  if (req.cookies && req.cookies.user == "user") {
-    return next();
+const isUser = (req, res, next) => {
+  if (req.cookies && req.cookies.user) {
+    const userCookie = JSON.parse(req.cookies.user);
+    if (userCookie.role === 'user') {
+      return next();
+    }
+    if (userCookie.role === 'admin') {
+      return res.redirect('/admin');
+    }
   }
-  if (req.cookies && req.cookies.user == "admin") {
-    res.redirect("/admin");
-  }
-  res.redirect("/login");
+  res.redirect('/login');
 };
 
-isAdmin = (req, res, next) => {
-  if (req.cookies && req.cookies.user === "admin") {
-    return next();
+const isAdmin = (req, res, next) => {
+  if (req.cookies && req.cookies.user) {
+    const userCookie = JSON.parse(req.cookies.user);
+    if (userCookie.role === 'admin') {
+      return next();
+    }
+    if (userCookie.role === 'user') {
+      return res.redirect('/user');
+    }
   }
-
-  if (req.cookies && req.cookies.user == "user") {
-    res.redirect("/user");
-  }
-
-  res.redirect("/login");
+  res.redirect('/login');
 };
 ```
 
-## Capturas de pantalla
+## Repositorio
 
-### Página pública
-
-![Página principal](/screenshots/login.png)
-
-### Zona de usuario
-
-![Zona usuario](/screenshots/user.png)
-
-### Zona de administrador
-
-![Zona admin](/screenshots/admin.png)
-
-## Autor
-
-- **Bryan Chuquimarca Castillo** - _Monolito_ - [Perfil de Github](https://github.com/BryanJChuquimarca)
-
-Repositorio del proyecto [Repositorio Monolito](https://github.com/BryanJChuquimarca/monolito)
+[Repositorio en la rama 2_capas](https://github.com/BryanJChuquimarca/monolito/tree/2_capas)

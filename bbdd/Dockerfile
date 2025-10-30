@@ -10,11 +10,11 @@ RUN initdb -D /var/lib/postgresql/data && \
     pg_ctl start -D /var/lib/postgresql/data && \
     psql --command "CREATE USER usuario WITH PASSWORD '123456';" && \
     psql --command "CREATE DATABASE bd_monolito OWNER usuario;" && \
-    # Allow Remote Connections via Password Authentication (md5)
     echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf && \
     echo "listen_addresses='*'" >> /var/lib/postgresql/data/postgresql.conf && \
     pg_ctl stop -D /var/lib/postgresql/data
 
+VOLUME [ "/var/lib/postgresql/data" ]
 
 USER root
 
