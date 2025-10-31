@@ -2,44 +2,51 @@ services:
   app_1:
     build: ./app/.
     container_name: app_1
-    networks:
-      - red_1
-    environment:
-      - DB_HOST=bbdd_1
     ports:
       - "3000:3000" #primero el del host
+    environment:
+      - DB_HOST=bbdd_1
+    networks:
+      - red_1
     depends_on:
       - bbdd_1
+    restart: unless-stopped
+
   bbdd_1:
     build: ./bbdd/.
     container_name: bbdd_1
-    networks:
-      - red_1
     volumes:
       - datos_postgres:/var/lib/postgresql/data
+    networks:
+      - red_1
+    restart: unless-stopped
     
   app_2:
     build: ./app/.
     container_name: app_2
-    networks:
-      - red_1
-    environment:
-      - DB_HOST=bbdd_2
     ports:
       - "3001:3000" #primero el del host
+    environment:
+      - DB_HOST=bbdd_2
+    networks:
+      - red_1
     depends_on:
       - bbdd_2
+    restart: unless-stopped
+
   bbdd_2:
     build: ./bbdd/.
     container_name: bbdd_2
-    networks:
-      - red_1
     volumes:
       - datos_postgres:/var/lib/postgresql/data
-    
+    networks:
+      - red_1
+    restart: unless-stopped
+
 networks:
   red_1:
     driver: bridge
+
 volumes:
   datos_postgres:
     driver: local
