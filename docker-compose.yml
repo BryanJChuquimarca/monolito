@@ -1,47 +1,30 @@
 services:
-  app_1:
-    build: ./app/.
-    container_name: app_1
+  backend:
+    build: ./2_backend/.
+    container_name: backend
     ports:
-      - "3000:3000" #primero el del host
+      - "1234:3000" #primero el del host
     environment:
-      - DB_HOST=bbdd_1
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
     networks:
       - red_1
     depends_on:
-      - bbdd_1
-    restart: unless-stopped
-
-  bbdd_1:
-    build: ./bbdd/.
-    container_name: bbdd_1
+      - db
+  db:
+    image: postgres:17-alpine
+    container_name: db
+    environment:
+      - POSTGRES_USER=usuario
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=bd_monolito
     volumes:
       - datos_postgres:/var/lib/postgresql/data
     networks:
       - red_1
-    restart: unless-stopped
-    
-  app_2:
-    build: ./app/.
-    container_name: app_2
-    ports:
-      - "3001:3000" #primero el del host
-    environment:
-      - DB_HOST=bbdd_2
-    networks:
-      - red_1
-    depends_on:
-      - bbdd_2
-    restart: unless-stopped
-
-  bbdd_2:
-    build: ./bbdd/.
-    container_name: bbdd_2
-    volumes:
-      - datos_postgres:/var/lib/postgresql/data
-    networks:
-      - red_1
-    restart: unless-stopped
 
 networks:
   red_1:

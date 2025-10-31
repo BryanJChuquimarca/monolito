@@ -6,12 +6,6 @@ const app = express();
 const port = 3000;
 require('dotenv').config();
 
-app.set('view engine', 'ejs');
-
-app.use(express.urlencoded());
-app.use(express.json());
-app.use(cookieParser());
-
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -20,7 +14,40 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
+app.set('view engine', 'ejs');
+
+app.use(express.urlencoded());
+app.use(express.json());
+app.use(cookieParser());
+
+
 pool.connect();
+
+function initDb(){
+  pool.connect((err) => {
+    if (err){
+      console.log('Error connecting to the database', err);
+    } else{
+      console.log('conneted to the database');
+    }
+  });
+  try{
+    //
+    pool.query (
+        `CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(50) NOT NULL
+        )`,
+    );
+    console.log('Users table created or already exist')
+  }catch{
+    console.error('Error initializing the database', err);
+  }
+}
+
+initDb();
 
 app.get('/', (req, res) => {
   res.render('index', { title: 'titulo', name: 'nombre' });
