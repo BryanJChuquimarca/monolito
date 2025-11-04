@@ -1,4 +1,11 @@
 services:
+  frontend:
+    build: ./1_frontend/.
+    container_name: frontend
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
   backend:
     build: ./2_backend/.
     container_name: backend
