@@ -20,29 +20,28 @@ app.use(express.urlencoded());
 app.use(express.json());
 app.use(cookieParser());
 
-
 pool.connect();
 
-function initDb(){
+function initDb() {
   pool.connect((err) => {
-    if (err){
+    if (err) {
       console.log('Error connecting to the database', err);
-    } else{
+    } else {
       console.log('conneted to the database');
     }
   });
-  try{
+  try {
     //
-    pool.query (
-        `CREATE TABLE IF NOT EXISTS users (
+    pool.query(
+      `CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             role VARCHAR(50) NOT NULL
         )`,
     );
-    console.log('Users table created or already exist')
-  }catch{
+    console.log('Users table created or already exist');
+  } catch (err) {
     console.error('Error initializing the database', err);
   }
 }
@@ -99,17 +98,19 @@ app.post('/login', async (req, res) => {
     const pwd = fila.password;
 
     if (await bcrypt.compareSync(password, pwd)) {
-  console.log('Login correcto de ' + username);
-  res.cookie('user', JSON.stringify({ username: fila.username, role: fila.role }));
-  if (fila.role === 'admin') {
-    res.redirect('/admin');
-  } else {
-    res.redirect('/user');
-  }
-} else {
-  res.status(401).redirect('/login');
-}
-
+      console.log('Login correcto de ' + username);
+      res.cookie(
+        'user',
+        JSON.stringify({ username: fila.username, role: fila.role }),
+      );
+      if (fila.role === 'admin') {
+        res.redirect('/admin');
+      } else {
+        res.redirect('/user');
+      }
+    } else {
+      res.status(401).redirect('/login');
+    }
   }
 });
 
@@ -118,13 +119,12 @@ app.post('/register', async (req, res) => {
 
   if (password !== confirmPassword) {
     return res.status(400).send('Las contraseñas no coinciden');
-   
   }
 
   try {
     const existingUser = await pool.query(
       'SELECT * FROM users WHERE username = $1',
-      [user]
+      [user],
     );
 
     if (existingUser.rows.length > 0) {
@@ -135,7 +135,7 @@ app.post('/register', async (req, res) => {
 
     await pool.query(
       'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
-      [user, hashedPassword, 'user']
+      [user, hashedPassword, 'user'],
     );
 
     console.log(`Usuario ${user} registrado correctamente`);
@@ -165,7 +165,6 @@ app.get('/admin', isAdmin, (req, res) => {
 app.get('/register', (req, res) => {
   res.render('register');
 });
-
 
 app.get('/logout', (req, res) => {
   res.clearCookie('user');
