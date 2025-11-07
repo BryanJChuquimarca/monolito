@@ -1,25 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register</title>
-</head>
-<body>
-  <h1>Register</h1>
-  <form action="/register" method="POST">
-    <label for="user">Username:</label>
-    <input type="text" name="user" placeholder="Username" required>
+<%- include('partials/header') %>
 
-    <label for="password">Password:</label>
-    <input type="password" name="password" placeholder="Password" required>
+<form action="/register" method="POST">
+  <label for="user">Username:</label>
+  <input type="text" name="user" placeholder="Username" id="user" required />
 
-    <label for="confirmPassword">Confirm Password:</label>
-    <input type="password" name="confirmPassword" placeholder="Confirm Password" required>
+  <label for="password">Password:</label>
+  <input
+    type="password"
+    name="password"
+    placeholder="Password"
+    id="password"
+    required
+  />
 
-    <button type="submit">Register</button>
-  </form>
+  <button type="submit">Register</button>
+</form>
 
-  <p>ya tienes cuenta? <a href="/login">Login</a></p>
-</body>
-</html>
+<p>ya tienes cuenta? <a href="/login">Login</a></p>
+<%- include('partials/footer') %>

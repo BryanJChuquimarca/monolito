@@ -1,10 +1,14 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const { Pool } = require("pg");
+const bcrypt = require("bcrypt");
+
+const { Picsum } = require("picsum-photos"); //revisar
+
 const app = express();
 const port = 3000;
-require('dotenv').config();
+require("dotenv").config();
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -14,167 +18,219 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-app.set('view engine', 'ejs');
+app.set("view engine", "ejs");
 
 app.use(express.urlencoded());
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors());
 
-pool.connect();
-
-function initDb() {
+async function initDb() {
   pool.connect((err) => {
     if (err) {
-      console.log('Error connecting to the database', err);
+      console.log("Error connecting to the database", err);
     } else {
-      console.log('conneted to the database');
+      console.log("conneted to the database");
     }
   });
   try {
-    //
+    //tabla users
     pool.query(
       `CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username VARCHAR(255) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             role VARCHAR(50) NOT NULL
-        )`,
+        )`
     );
-    console.log('Users table created or already exist');
+    console.log("Users table created or already exist");
+    //tabla posts
+    pool.query(
+      `CREATE TABLE IF NOT EXISTS posts (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(100),
+            image_url VARCHAR(255),
+            content VARCHAR(50),
+            user_id INT REFERENCES users(id)
+        )`
+    );
+    console.log("Posts table created or already exist");
+    //usuario prueba
+    const adminPassword = await bcrypt.hash("admin", 10);
+    await pool.query(
+      `INSERT INTO users (username, password, role)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (username) DO NOTHING`,
+      ["admin", adminPassword, "admin"]
+    );
+
+    console.log("Test user 'admin' created or already exists.");
+    //usuario prueba
+    const userPassword = await bcrypt.hash("user", 10);
+    await pool.query(
+      `INSERT INTO users (username, password, role)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (username) DO NOTHING`,
+      ["pepe", userPassword, "user"]
+    );
+    console.log("Test user 'pepe' created or already exists.");
+    //post en tabla posts
+    const createPost = async (id, imageUrl, content, username) => {
+      const userResult = await pool.query(
+        "SELECT id FROM users WHERE username = $1",
+        [username]
+      );
+      if (userResult.rows.length === 0) {
+        console.error(`User ${username} not found. Cannot create post ${id}.`);
+        return; // Detener si el usuario no existe
+      }
+      const userId = userResult.rows[0].id;
+      await pool.query(
+        `INSERT INTO posts (id, image_url, content, user_id)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (id) DO NOTHING`,
+        [id, imageUrl, content, userId]
+      );
+      console.log("Post created or already exists");
+    };
+    await createPost(
+      1,
+      Picsum.url(),
+      "Este es el contenido del primer post.",
+      "pepe"
+    );
+    await createPost(
+      2,
+      Picsum.url(),
+      "Este es el contenido del segundo post.",
+      "pepe"
+    );
+    await createPost(
+      3,
+      Picsum.url(),
+      "Este es el contenido del tercero post.",
+      "pepe"
+    );
   } catch (err) {
-    console.error('Error initializing the database', err);
+    console.error("Error initializing the database", err);
   }
 }
 
-initDb();
-
-app.get('/', (req, res) => {
-  res.render('index', { title: 'titulo', name: 'nombre' });
+app.get("/", (req, res) => {
+  res.render("index", {
+    title: "Mi super página",
+  });
 });
-
-const isUser = (req, res, next) => {
-  if (req.cookies && req.cookies.user) {
-    const userCookie = JSON.parse(req.cookies.user);
-    if (userCookie.role === 'user') {
-      return next();
-    }
-    if (userCookie.role === 'admin') {
-      return res.redirect('/admin');
-    }
-  }
-  res.redirect('/login');
-};
 
 const isAdmin = (req, res, next) => {
-  if (req.cookies && req.cookies.user) {
-    const userCookie = JSON.parse(req.cookies.user);
-    if (userCookie.role === 'admin') {
-      return next();
-    }
-    if (userCookie.role === 'user') {
-      return res.redirect('/user');
-    }
+  if (req.cookies && req.cookies.user && req.cookies.role == "admin") {
+    return next();
   }
-  res.redirect('/login');
+  if (req.cookies && req.cookies.user && req.cookies.role == "user") {
+    return res.redirect("/user");
+  }
+  res.redirect("/login");
 };
 
-//gestion de la vista
-app.get('/login', (req, res) => {
-  res.render('login');
+const isUser = (req, res, next) => {
+  if (req.cookies && req.cookies.user && req.cookies.role == "user") {
+    return next();
+  }
+  if (req.cookies && req.cookies.user && req.cookies.role == "admin") {
+    return res.redirect("/admin");
+  }
+  res.redirect("/login");
+};
+
+app.get("/register", (req, res) => {
+  res.render("register", {
+    title: "Register",
+  });
 });
 
-//hacer login generico comparandolo con la base de datos
-
-app.post('/login', async (req, res) => {
+app.post("/register", async (req, res) => {
   const { user, password } = req.body;
-  const seleccionar = await pool.query(
-    'SELECT username, password, role FROM users WHERE username = $1',
-    [user],
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await pool.query(
+    "INSERT INTO users (username, password, role) VALUES ($1, $2, $3)",
+    [user, hashedPassword, "user"]
   );
-  const fila = seleccionar.rows[0];
-
-  if (fila) {
-    const username = fila.username;
-    const pwd = fila.password;
-
-    if (await bcrypt.compareSync(password, pwd)) {
-      console.log('Login correcto de ' + username);
-      res.cookie(
-        'user',
-        JSON.stringify({ username: fila.username, role: fila.role }),
-      );
-      if (fila.role === 'admin') {
-        res.redirect('/admin');
-      } else {
-        res.redirect('/user');
-      }
-    } else {
-      res.status(401).redirect('/login');
-    }
-  }
+  res.redirect("/login");
 });
 
-app.post('/register', async (req, res) => {
-  const { user, password, confirmPassword } = req.body;
-
-  if (password !== confirmPassword) {
-    return res.status(400).send('Las contraseñas no coinciden');
-  }
-
-  try {
-    const existingUser = await pool.query(
-      'SELECT * FROM users WHERE username = $1',
-      [user],
-    );
-
-    if (existingUser.rows.length > 0) {
-      return res.status(400).send('El usuario ya existe');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await pool.query(
-      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
-      [user, hashedPassword, 'user'],
-    );
-
-    console.log(`Usuario ${user} registrado correctamente`);
-    res.redirect('/login');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error al registrar el usuario');
-  }
-});
-
-app.get('/user', isUser, (req, res) => {
-  const userCookie = JSON.parse(req.cookies.user);
-  res.render('user', {
-    name: userCookie.username,
-    rol: 'Usuario',
+app.get("/login", (req, res) => {
+  res.render("login", {
+    title: "Login",
   });
 });
 
-app.get('/admin', isAdmin, (req, res) => {
-  const userCookie = JSON.parse(req.cookies.user);
-  res.render('admin', {
-    name: userCookie.username,
-    rol: 'Admin',
+app.post("/login", async (req, res) => {
+  const { user, password } = req.body;
+  console.log("Login attempt");
+  console.log("user", user);
+  console.log("password", password);
+
+  const resultado = await pool.query(
+    "SELECT * FROM users WHERE username = $1",
+    [user]
+  );
+  const userdb = resultado.rows[0];
+
+  if (!userdb) {
+    console.log("usuario no existe");
+    return res.status(401).redirect("login");
+  }
+
+  console.log("usuario existe");
+  console.log("userdb.username", userdb.username);
+  console.log("userdb.password", userdb.password);
+  console.log("userdb.role", userdb.role);
+
+  const validPassword = await bcrypt.compare(password, userdb.password);
+
+  if (validPassword) {
+    console.log("usuario y contraseña correcta");
+    res.cookie("user", user);
+    res.cookie("role", userdb.role);
+    console.log("redirect to ", userdb.role);
+    res.redirect(userdb.role);
+  } else {
+    console.log("contraseña incorrecta");
+    res.status(401).redirect("login");
+  }
+});
+
+app.get("/admin", isAdmin, (req, res) => {
+  // leeriamos el usuario de la cookie
+  // consulta en bbdd del usuario
+  // se lo enviamos por parametro al render
+  res.render("admin", {
+    user: req.cookies.user,
+    title: "Zona admin privada",
   });
 });
 
-app.get('/register', (req, res) => {
-  res.render('register');
+app.get("/user", isUser, (req, res) => {
+  res.render("user", {
+    user: req.cookies.user,
+  });
 });
 
-app.get('/logout', (req, res) => {
-  res.clearCookie('user');
-  res.redirect('login');
+app.get("/logout", (req, res) => {
+  res.clearCookie("user");
+  res.clearCookie("role");
+  res.redirect("login");
 });
 
-app.get('/logout', (req, res) => {
-  res.clearCookie('user');
-  res.redirect('login');
+app.get("/post", async (req, res) => {
+  const resultado = await pool.query(
+    `SELECT posts.id, posts.title, posts.image_url, posts.content, users.username FROM posts JOIN users ON posts.user_id = users.id`
+  );
+  const posts = resultado.rows;
+  res.json(posts);
 });
+
+initDb();
 
 app.listen(port, () => {
   console.log(`Example app listening on port http://localhost:${port}`);
