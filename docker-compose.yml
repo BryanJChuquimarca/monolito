@@ -10,7 +10,7 @@ services:
     build: ./2_backend/.
     container_name: backend
     ports:
-      - "1234:3000" #primero el del host
+      - "1234:3000"
     environment:
       - DB_HOST=db
       - DB_PORT=5432

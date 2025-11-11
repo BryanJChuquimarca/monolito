@@ -1,11 +1,17 @@
-<main>
-  <h1>{{ title() }}</h1>
+<ion-app>
+  <main>
+    <ion-card *ngFor="let post of posts">
+      <img alt="Post Image" [src]="post.image_url" />
+      <ion-card-header>
+        <ion-card-title>{{ post.title }}</ion-card-title>
+        <ion-card-subtitle>{{ post.username }}</ion-card-subtitle>
+      </ion-card-header>
 
-  <ul>
-    <li *ngFor="let post of posts">
-      <img [src]="post.image_url" alt="Post Image" />
-      <p><b>Contenido:</b> {{ post.content }}</p>
-    </li>
-  </ul>
-</main>
-<router-outlet />
+      <ion-card-content>
+        {{ post.content }}
+      </ion-card-content>
+    </ion-card>
+  </main>
+
+  <router-outlet />
+</ion-app>

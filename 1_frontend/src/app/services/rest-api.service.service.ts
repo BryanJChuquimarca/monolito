@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root'
 })
 export class RestApiServiceService {
-  private apiURL = 'http://localhost:1234'
+  private apiURL = 'http://localhost:1234';
   constructor(private http: HttpClient) { }
 
   getPosts(){

@@ -1,10 +1,9 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const { Pool } = require("pg");
 const bcrypt = require("bcrypt");
 
-const { Picsum } = require("picsum-photos"); //revisar
+const { Picsum } = require("picsum-photos");
 
 const app = express();
 const port = 3000;
@@ -50,17 +49,7 @@ async function initDb() {
         )`
     );
     console.log("Posts table created or already exist");
-    //usuario prueba
-    const adminPassword = await bcrypt.hash("admin", 10);
-    await pool.query(
-      `INSERT INTO users (username, password, role)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (username) DO NOTHING`,
-      ["admin", adminPassword, "admin"]
-    );
-
-    console.log("Test user 'admin' created or already exists.");
-    //usuario prueba
+    
     const userPassword = await bcrypt.hash("user", 10);
     await pool.query(
       `INSERT INTO users (username, password, role)
