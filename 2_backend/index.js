@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 const bcrypt = require("bcrypt");
-
+const jwt = require("jsonwebtoken");
 const { Picsum } = require("picsum-photos");
 
 const app = express();
@@ -17,62 +17,79 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-async function initDb() {
-  pool.connect((err) => {
+const JWT_SECRET = "secreto";
+
+function verifyToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401);
+  }
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      console.log("Error connecting to the database", err);
-    } else {
-      console.log("conneted to the database");
+      return res.status(403);
     }
+    req.user = user;
+    next();
   });
+}
+
+async function initDb() {
   try {
-    //tabla users
-    pool.query(
+    await pool.connect();
+    console.log("Connected to the database");
+  } catch (error) {
+    console.error("Error connecting to the database", error);
+  }
+  try {
+    await pool.query(
       `CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            role VARCHAR(50) NOT NULL
-        )`
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL
+    )`
     );
-    console.log("Users table created or already exist");
-    //tabla posts
+    console.log("Users table created or already exists");
     pool.query(
       `CREATE TABLE IF NOT EXISTS posts (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR(100),
-            image_url VARCHAR(255),
-            content VARCHAR(50),
-            user_id INT REFERENCES users(id)
-        )`
+        id SERIAL PRIMARY KEY,
+        image_url VARCHAR(255),
+        content TEXT NOT NULL,
+        user_id INTEGER REFERENCES users(id)
+    )`
     );
-    console.log("Posts table created or already exist");
-    
-    const userPassword = await bcrypt.hash("user", 10);
-    await pool.query(
-      `INSERT INTO users (username, password, role)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (username) DO NOTHING`,
-      ["pepe", userPassword, "user"]
-    );
-    console.log("Test user 'pepe' created or already exists.");
-    //post en tabla posts
+    console.log("Posts table created or already exists");
+    const createUser = async (username, password, role) => {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await pool.query(
+        `INSERT INTO users (username, password, role)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (username) DO NOTHING`,
+        [username, hashedPassword, role]
+      );
+      console.log(`Default user "${username}" created or already exists`);
+    };
+    await createUser("pepe", "pepe", "user");
+    createUser("admin", "admin", "admin");
     const createPost = async (id, imageUrl, content, username) => {
       const userResult = await pool.query(
         "SELECT id FROM users WHERE username = $1",
         [username]
       );
       if (userResult.rows.length === 0) {
-        console.error(`User ${username} not found. Cannot create post ${id}.`);
-        return; // Detener si el usuario no existe
+        console.log(`User "${username}" does not exist. Cannot create post.`);
+        return;
       }
       const userId = userResult.rows[0].id;
       await pool.query(
         `INSERT INTO posts (id, image_url, content, user_id)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (id) DO NOTHING`,
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (id) DO NOTHING`,
         [id, imageUrl, content, userId]
       );
       console.log("Post created or already exists");
@@ -92,17 +109,49 @@ async function initDb() {
     await createPost(
       3,
       Picsum.url(),
-      "Este es el contenido del tercero post.",
+      "Este es el contenido del tercer post.",
       "pepe"
     );
-  } catch (err) {
-    console.error("Error initializing the database", err);
+  } catch (error) {
+    console.error("Error initializing database", error);
   }
 }
 
-app.get("/post", async (req, res) => {
+app.get("/profile", verifyToken, async (req, res) => {
+  res.json({ message: "This is a protected profile route", user: req.user });
+});
+
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  pool
+    .query("SELECT * FROM users WHERE username = $1", [username])
+    .then(async (result) => {
+      if (result.rows.length === 0) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      const user = result.rows[0];
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role },
+        JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+      res.json({ token });
+    })
+    .catch((error) => {
+      console.error("Error during login", error);
+      res.status(500).json({ error: "Internal server error" });
+    });
+});
+
+app.get("/posts", async (req, res) => {
   const resultado = await pool.query(
-    `SELECT posts.id, posts.title, posts.image_url, posts.content, users.username FROM posts JOIN users ON posts.user_id = users.id`
+    `SELECT posts.id, posts.image_url, posts.content, users.username
+        FROM posts
+        JOIN users ON posts.user_id = users.id`
   );
   const posts = resultado.rows;
   res.json(posts);

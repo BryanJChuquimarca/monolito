@@ -18,20 +18,12 @@ export class AppComponent implements OnInit {
   constructor(private api: RestApiServiceService) { }
 
   ngOnInit() {
-    this.loadPost();
+    this.loadPosts();
   }
 
-  loadPost() {
-    this.api.getPosts().subscribe({
-      next: (data) => {
-        this.posts = data;
-        console.log('Posts cargados correctamente:', this.posts);
-      },
-      error: (err) => {
-        console.error('Error al cargar los posts:', err);
-      }
+  loadPosts() {
+    this.api.getPosts().subscribe((data) => {
+      this.posts = data;
     });
   }
-
 }
-

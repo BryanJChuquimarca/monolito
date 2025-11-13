@@ -1,14 +1,44 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RestApiServiceService {
-  private apiURL = 'http://localhost:1234';
+  private apiURL = 'http://localhost:1234/';
+  private tokenKey = 'authToken';
+
   constructor(private http: HttpClient) { }
 
-  getPosts(){
-    return this.http.get<any[]>(`${this.apiURL}/post`);
+  login(username: string, password: string): Observable<any> {
+    const res = this.http.post(this.apiURL + 'login', { username, password }).pipe(
+      tap((response: any) => {
+        if (response.token) {
+          localStorage.setItem(this.tokenKey, response.token);
+        }
+      })
+    );
+    console.log('Login response:', res);
+    return res;
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.tokenKey);
+  }
+
+  logout(): void {
+    localStorage.removeItem(this.tokenKey);
+  }
+
+  getProfile(): Observable<any> {
+    const token = this.getToken();
+    const headers = new HttpHeaders(token ? { 'Authorization': `Bearer ${token}` } : {});
+    return this.http.get(this.apiURL + 'profile', { headers });
+  }
+
+
+  getPosts(): Observable<any> {
+    return this.http.get(this.apiURL + 'posts');
   }
 }
