@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
@@ -8,6 +8,8 @@ import { Observable, tap } from 'rxjs';
 export class RestApiServiceService {
   private apiURL = 'http://localhost:1234/';
   private tokenKey = 'authToken';
+
+  isLoggedIn = signal(false);
 
   constructor(private http: HttpClient) { }
 
@@ -20,6 +22,7 @@ export class RestApiServiceService {
       })
     );
     console.log('Login response:', res);
+    this.isLoggedIn.set(true);
     return res;
   }
 
@@ -29,6 +32,7 @@ export class RestApiServiceService {
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
+    this.isLoggedIn.set(false);
   }
 
   getProfile(): Observable<any> {

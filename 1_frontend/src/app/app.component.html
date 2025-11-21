@@ -1,21 +1,12 @@
-<ion-app>
-  <ion-content class="ion-padding">
-    <main class="main-content">
-      <h1 class="ion-padding-start">{{ title() }}</h1>
-      <ion-card *ngFor="let post of posts">
-        <div class="image-container">
-          <img alt="Post Image" [src]="post.image_url" />
-        </div>
+<nav class="navbar">
+  <a routerLink="/home">Home</a>
+  <a *ngIf="!auth.isLoggedIn()" routerLink="/login">Login</a>
+  <a *ngIf="auth.isLoggedIn()" routerLink="/profile">Profile</a>
+  <a *ngIf="auth.isLoggedIn()" href="#" (click)="logout();">Logout</a>
+</nav>
 
-        <ion-card-header>
-          <ion-card-title>{{ post.username }}</ion-card-title> <!--cambiar de username a title cuando haya title-->
-          <ion-card-subtitle>{{ post.username }}</ion-card-subtitle>
-        </ion-card-header>
-        <ion-card-content>
-          {{ post.content }}
-        </ion-card-content>
-      </ion-card>
-    </main>
-  </ion-content>
-  <router-outlet />
-</ion-app>
+<router-outlet />
+
+<footer class="footer">
+  <p>&copy; 2024 My Application</p>
+</footer>
