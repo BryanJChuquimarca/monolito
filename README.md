@@ -160,7 +160,10 @@ const isAdmin = (req, res, next) => {
   res.redirect('/login');
 };
 ```
+### Ionic
+
+_Uso en la pagina home cosas del ionic para las cards_
 
 ## Repositorio
 
-[Repositorio en la rama 2_capas](https://github.com/BryanJChuquimarca/monolito/tree/2_capas)
+[Repositorio en la rama 3_capas](https://github.com/BryanJChuquimarca/monolito/tree/3_capas)
