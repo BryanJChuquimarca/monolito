@@ -1,7 +1,7 @@
 form {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 30px;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 25px;
   border: 1px solid #ddd;
   border-radius: 10px;
   background-color: #fff;
@@ -11,27 +11,23 @@ form {
   gap: 15px;
 }
 
-form div {
-  display: flex;
-  flex-direction: column;
-}
-
 form label {
   font-weight: bold;
+  font-size: 0.95rem;
   margin-bottom: 5px;
-  font-size: 0.9rem;
+  color: #262626;
 }
 
-form input {
+form input[type="text"] {
   padding: 10px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 6px;
   outline: none;
-  transition: border 0.2s;
+  transition: border 0.2s, box-shadow 0.2s;
 }
 
-form input:focus {
+form input[type="text"]:focus {
   border-color: #3897f0;
   box-shadow: 0 0 0 2px rgba(56, 151, 240, 0.2);
 }
@@ -50,10 +46,4 @@ form button {
 
 form button:hover {
   background-color: #2a77d0;
-}
-
-.error {
-  color: #ed4956;
-  font-size: 0.9rem;
-  text-align: center;
 }

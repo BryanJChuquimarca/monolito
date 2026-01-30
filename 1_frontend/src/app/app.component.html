@@ -1,12 +1,14 @@
 <nav class="navbar">
-  <a routerLink="/home">Home</a>
+  <a routerLink="/">Home</a>
   <a *ngIf="!auth.isLoggedIn()" routerLink="/login">Login</a>
   <a *ngIf="auth.isLoggedIn()" routerLink="/profile">Profile</a>
+  <a *ngIf="auth.isLoggedIn()" routerLink="/createPost">Create Post</a>
   <a *ngIf="auth.isLoggedIn()" href="#" (click)="logout();">Logout</a>
+
 </nav>
-
-<router-outlet />
-
+<main>
+  <router-outlet />
+</main>
 <footer class="footer">
   <p>&copy; 2024 My Application</p>
 </footer>

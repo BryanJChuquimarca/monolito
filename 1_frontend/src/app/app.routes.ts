@@ -5,12 +5,15 @@ import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { authGuard } from './guard/auth.guard';
+import { CreatePostComponent } from './pages/create-post/create-post.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
     { path: 'home', component: HomeComponent },
     { path: 'login', component: LoginComponent },
-    { path: 'profile', canActivate: [authGuard], component: ProfileComponent }
+    { path: 'profile', canActivate: [authGuard], component: ProfileComponent },
+    { path: 'createPost', canActivate: [authGuard], component: CreatePostComponent }
+
 ];
 
 @NgModule({

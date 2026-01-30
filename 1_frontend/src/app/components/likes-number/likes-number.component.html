@@ -1,0 +1,7 @@
+<div class="like-container">
+  <button (click)="toggleLike()" aria-label="like button">
+      <span *ngIf="liked; else notLikedTemplate">💖</span>
+      <ng-template #notLikedTemplate>🤍</ng-template>
+  </button>
+  <p>{{ likesNumber }}</p>
+</div>

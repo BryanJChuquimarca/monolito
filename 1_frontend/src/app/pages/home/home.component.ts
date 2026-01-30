@@ -1,20 +1,22 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RestApiServiceService } from '../../services/rest-api.service.service';
 import { CommonModule } from '@angular/common';
-import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonApp, IonContent } from '@ionic/angular/standalone';
+import { LikesNumberComponent } from '../../components/likes-number/likes-number.component';
+import { CommentsComponent } from '../../components/comments/comments.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
 
-  imports: [ CommonModule, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle],
+  imports: [CommonModule, LikesNumberComponent, CommentsComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
 export class HomeComponent implements OnInit {
-  protected readonly title = signal('Pagina principal');
 
   posts: any[] = []
+  protected readonly auth = inject(RestApiServiceService);
+  commentsVisibles: { [postId: string]: boolean } = {};
 
   constructor(private api: RestApiServiceService) { }
 
@@ -26,5 +28,15 @@ export class HomeComponent implements OnInit {
     this.api.getPosts().subscribe((data) => {
       this.posts = data;
     });
+  }
+
+  deletePost(postId: string) {
+    this.api.deletePost(postId).subscribe(() => {
+      console.log(`Post with ID ${postId} deleted.`);
+      this.loadPosts();
+    });
+  }
+  toggleComments(postId: string) {
+    this.commentsVisibles[postId] = !this.commentsVisibles[postId];
   }
 }

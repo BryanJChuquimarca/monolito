@@ -1,24 +1,202 @@
 services:
+  api-gateway:
+    image: traefik:v3.6.6
+    container_name: api-gateway
+    ports:
+      - "80:80"
+      - "8080:8080"
+    networks:
+      - dmz
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    depends_on:
+      - frontend
+      - user_service
+      - like_service
+      - comment_service
+      - post_service
+
   frontend:
     build: ./1_frontend/.
     container_name: frontend
-    ports:
-      - "4201:4201"
-    depends_on:
-      - backend
-  backend:
-    build: ./2_backend/.
-    container_name: backend
     networks:
-      - red_1
+      - dmz
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=4201"
+    depends_on:
+      - user_service
+      - like_service
+      - comment_service
+      - post_service
+
+  auth_service:
+    build: ./0_auth_service/.
+    container_name: auth_service
+    networks:
+      - dmz
+      - privadas
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=usuario
       - DB_PASSWORD=123456
       - DB_NAME=bd_monolito
-    ports:
-      - "1234:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=2_dos-capas_dmz"
+
+      - "traefik.http.routers.auth.rule=Host(`frontend.localhost`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.auth-strip.stripprefix.prefixes=/api/auth"
+      - "traefik.http.routers.auth.middlewares=auth-strip"
+
+      - "traefik.http.middlewares.auth_service.forwardauth.address=http://auth_service:3000/verify"
+      - "traefik.http.middlewares.auth_service.forwardauth.authResponseHeaders=x-user-id, x-user-name, x-user-role"
+      - "traefik.http.middlewares.auth_service.forwardauth.trustForwardHeader=true"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  initdb:
+    build: ./2_initdb/.
+    container_name: initdb
+    networks:
+      - privadas
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
+    depends_on:
+      db:
+        condition: service_healthy
+
+  user_service:
+    build: ./3_user/.
+    container_name: user_service
+    networks:
+      - dmz
+      - privadas
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=2_dos-capas_dmz"
+      - "traefik.http.routers.user_service.rule=Host(`frontend.localhost`) && PathPrefix(`/api/user`)"
+      - "traefik.http.routers.user_service.entrypoints=web"
+      - "traefik.http.services.user_service.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.user_service-strip.stripprefix.prefixes=/api/user"
+      - "traefik.http.routers.user_service.middlewares=auth_service,user_service-strip"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  like_service:
+    build: ./4_like/.
+    container_name: like_service
+    networks:
+      - dmz
+      - privadas
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=2_dos-capas_dmz"
+      - "traefik.http.routers.like_service.rule=Host(`frontend.localhost`) && PathPrefix(`/api/like`)"
+      - "traefik.http.routers.like_service.entrypoints=web"
+      - "traefik.http.services.like_service.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.like_service-strip.stripprefix.prefixes=/api/like"
+      - "traefik.http.routers.like_service.middlewares=auth_service,like_service-strip"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  comment_service:
+    build: ./5_comment/.
+    container_name: comment_service
+    networks:
+      - dmz
+      - privadas
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=2_dos-capas_dmz"
+      - "traefik.http.routers.comment_service.rule=Host(`frontend.localhost`) && PathPrefix(`/api/comment`)"
+      - "traefik.http.routers.comment_service.entrypoints=web"
+      - "traefik.http.services.comment_service.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.comment_service-strip.stripprefix.prefixes=/api/comment"
+      - "traefik.http.routers.comment_service.middlewares=auth_service,comment_service-strip"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  post_service:
+    build: ./6_post/.
+    container_name: post_service
+    networks:
+      - dmz
+      - privadas
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=2_dos-capas_dmz"
+      - "traefik.http.routers.post_service.rule=Host(`frontend.localhost`) && PathPrefix(`/api/post`)"
+      - "traefik.http.routers.post_service.entrypoints=web"
+      - "traefik.http.services.post_service.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.post_service-strip.stripprefix.prefixes=/api/post"
+      - "traefik.http.routers.post_service.middlewares=auth_service,post_service-strip"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  public_post_service:
+    build: ./6_post/.
+    container_name: public_post_service
+    networks:
+      - dmz
+      - privadas
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=usuario
+      - DB_PASSWORD=123456
+      - DB_NAME=bd_monolito
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=2_dos-capas_dmz"
+      - "traefik.http.routers.public_post_service.rule=Host(`frontend.localhost`) && PathPrefix(`/api/public/post`)"
+      - "traefik.http.routers.public_post_service.entrypoints=web"
+      - "traefik.http.services.public_post_service.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.public_post_service-strip.stripprefix.prefixes=/api/public/post"
+      - "traefik.http.routers.public_post_service.middlewares=public_post_service-strip"
     depends_on:
       db:
         condition: service_healthy
@@ -32,7 +210,7 @@ services:
     volumes:
       - datos_postgres:/var/lib/postgresql/data
     networks:
-      - red_1
+      - privadas
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U usuario -d bd_monolito"]
       interval: 3s
@@ -41,7 +219,9 @@ services:
       start_period: 5s
 
 networks:
-  red_1:
+  dmz:
+    driver: bridge
+  privadas:
     driver: bridge
 
 volumes:
