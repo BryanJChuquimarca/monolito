@@ -19,17 +19,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// get /posts
-app.get("/", async(req, res) => {
-  const resultado = await pool.query(
-    `SELECT posts.id, posts.image_url, posts.content, users.username
-        FROM posts
-        JOIN users ON posts.user_id = users.id
-        ORDER BY posts.date_created DESC`,
-  );
-  const posts = resultado.rows;
-  res.json(posts);
-});
 // post /post <-- crear un post
 app.post("/", (req, res) => {
   const { content } = req.body;

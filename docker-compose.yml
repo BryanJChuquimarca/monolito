@@ -178,7 +178,7 @@ services:
         condition: service_healthy
 
   public_post_service:
-    build: ./6_post/.
+    build: ./7_public_post/.
     container_name: public_post_service
     networks:
       - dmz
